@@ -2,10 +2,12 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError
 
 from app.config import get_settings
 from app.database import Base, engine
+from app.routers.auth import router as auth_router
 from app.routers.businesses import dashboard_router, router as businesses_router
 from app.routers.review_sessions import router as review_sessions_router
 
@@ -27,6 +29,7 @@ app.add_middleware(
 )
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.include_router(auth_router)
 app.include_router(businesses_router)
 app.include_router(dashboard_router)
 app.include_router(review_sessions_router)
@@ -35,6 +38,24 @@ app.include_router(review_sessions_router)
 @app.on_event("startup")
 def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
+    ensure_existing_schema()
+
+
+def ensure_existing_schema() -> None:
+    inspector = inspect(engine)
+    if "businesses" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("businesses")}
+    if "owner_user_id" in columns:
+        return
+
+    with engine.begin() as connection:
+        if engine.dialect.name == "postgresql":
+            connection.execute(text("ALTER TABLE businesses ADD COLUMN owner_user_id UUID REFERENCES users(id)"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_businesses_owner_user_id ON businesses (owner_user_id)"))
+        else:
+            connection.execute(text("ALTER TABLE businesses ADD COLUMN owner_user_id CHAR(32)"))
 
 
 @app.exception_handler(OperationalError)

@@ -1,5 +1,18 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 const REQUEST_TIMEOUT_MS = 15000;
+const TOKEN_KEY = "review_qr_auth_token";
+
+export function getStoredToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function storeToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearStoredToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 async function request(path, options = {}) {
   const controller = new AbortController();
@@ -11,6 +24,7 @@ async function request(path, options = {}) {
       ...options,
       headers: {
         "Content-Type": "application/json",
+        ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
         ...(options.headers || {}),
       },
       signal: controller.signal,
@@ -48,6 +62,19 @@ function formatErrorDetail(detail) {
 }
 
 export const api = {
+  signup: (payload) =>
+    request("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  login: (payload) =>
+    request("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  me: () => request("/api/auth/me"),
+  getMyBusiness: () => request("/api/businesses/me/current"),
+  getMyDashboard: () => request("/api/dashboard/me/current"),
   createBusiness: (payload) =>
     request("/api/businesses", {
       method: "POST",

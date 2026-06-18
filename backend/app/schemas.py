@@ -49,6 +49,37 @@ class BusinessResponse(BaseModel):
     qr_code_url: str
 
 
+class UserPublic(BaseModel):
+    user_id: uuid.UUID
+    name: str
+    email: str
+    business_id: uuid.UUID | None = None
+
+
+class AuthRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=255)
+    password: str = Field(min_length=6, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def clean_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
+class SignupRequest(AuthRequest):
+    name: str = Field(min_length=2, max_length=120)
+
+    @field_validator("name")
+    @classmethod
+    def clean_name(cls, value: str) -> str:
+        return " ".join(value.strip().split())
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user: UserPublic
+
+
 class BusinessPublic(BaseModel):
     business_id: uuid.UUID
     business_name: str

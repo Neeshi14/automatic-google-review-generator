@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.database import get_db
-from app.models import Business, ReviewSession
+from app.models import Business, ReviewSession, User
 from app.schemas import BusinessCreate, BusinessPublic, BusinessResponse, DashboardResponse
 from app.services.qr_service import generate_qr_code, public_qr_url
 
@@ -31,10 +32,22 @@ def unique_slug(db: Session, name: str) -> str:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=BusinessResponse)
-def create_business(payload: BusinessCreate, db: Session = Depends(get_db)) -> BusinessResponse:
+def create_business(
+    payload: BusinessCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BusinessResponse:
+    existing = db.scalar(select(Business).where(Business.owner_user_id == current_user.id).limit(1))
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="This account already has a QR code. Open your dashboard to download it.",
+        )
+
     slug = unique_slug(db, payload.business_name)
     qr_code_path, review_page_url = generate_qr_code(slug)
     business = Business(
+        owner_user_id=current_user.id,
         business_name=payload.business_name,
         business_slug=slug,
         google_review_url=payload.google_review_url,
@@ -50,6 +63,23 @@ def create_business(payload: BusinessCreate, db: Session = Depends(get_db)) -> B
         business_name=business.business_name,
         business_slug=business.business_slug,
         review_page_url=review_page_url,
+        qr_code_url=public_qr_url(business.qr_code_path),
+    )
+
+
+@router.get("/me/current", response_model=BusinessResponse)
+def get_current_business(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> BusinessResponse:
+    business = db.scalar(select(Business).where(Business.owner_user_id == current_user.id).limit(1))
+    if not business:
+        raise HTTPException(status_code=404, detail="No QR business has been created for this account yet.")
+    return BusinessResponse(
+        business_id=business.id,
+        business_name=business.business_name,
+        business_slug=business.business_slug,
+        review_page_url=generate_qr_code(business.business_slug)[1],
         qr_code_url=public_qr_url(business.qr_code_path),
     )
 
@@ -108,3 +138,14 @@ def get_dashboard(business_id: uuid.UUID, db: Session = Depends(get_db)) -> Dash
         recent_selected_reviews=list(recent_reviews),
         created_at=business.created_at,
     )
+
+
+@dashboard_router.get("/me/current", response_model=DashboardResponse)
+def get_my_dashboard(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> DashboardResponse:
+    business_id = db.scalar(select(Business.id).where(Business.owner_user_id == current_user.id).limit(1))
+    if not business_id:
+        raise HTTPException(status_code=404, detail="Create your QR code first.")
+    return get_dashboard(business_id, db)
