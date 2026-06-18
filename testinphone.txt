@@ -1,0 +1,69 @@
+Because the dashboard does **not count the QR image scan itself**. It only counts when the scanned link opens the review page and the app successfully creates a review session in backend.
+
+In your dashboard:
+
+- **Total scans = review page sessions created**
+  It increases when this loads successfully:
+
+```text
+/review/nirali-graphics-4
+```
+
+- **Generated sessions**
+  Increases only after the user clicks **Generate 10 reviews**.
+
+- **Top experience**
+  Shows only after the user chooses Excellent/Good/Average and generates reviews.
+
+- **Recent selected reviews**
+  Shows only after the user selects/edits a review and clicks **Post on Google**.
+
+Most likely issue: if you scanned the QR from your mobile, the QR probably contains:
+
+```text
+http://localhost:5173/review/nirali-graphics-4
+```
+
+or
+
+```text
+http://127.0.0.1:5173/review/nirali-graphics-4
+```
+
+That works only on your computer. On your phone, `localhost` means the phone itself, not your laptop, so the backend never receives the scan.
+
+For mobile QR testing, use your computer’s LAN IP, for example:
+
+```text
+http://192.168.1.10:5173
+```
+
+Then update these:
+
+Backend `.env`:
+
+```env
+FRONTEND_URL=http://192.168.1.10:5173
+BACKEND_URL=http://192.168.1.10:8000
+CORS_ORIGINS=http://192.168.1.10:5173,http://localhost:5173,http://127.0.0.1:5173
+```
+
+Frontend `.env`:
+
+```env
+VITE_API_BASE_URL=http://192.168.1.10:8000
+```
+
+Start servers like this:
+
+```powershell
+cd backend
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+```powershell
+cd frontend
+npm run dev -- --host 0.0.0.0
+```
+
+Important: after changing `FRONTEND_URL`, generate a **new QR code**, because the old QR already has the old localhost URL inside it.
