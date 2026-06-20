@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -14,6 +16,13 @@ from app.routers.review_sessions import router as review_sessions_router
 
 settings = get_settings()
 
+APP_DIR = Path(__file__).resolve().parent
+STATIC_DIR = APP_DIR / "static"
+QR_CODE_DIR = STATIC_DIR / "qrcodes"
+
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+QR_CODE_DIR.mkdir(parents=True, exist_ok=True)
+
 app = FastAPI(
     title="AI Google Review QR Generator",
     description="Generate compliant Google Review QR sessions with AI-assisted review drafting.",
@@ -28,7 +37,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(auth_router)
 app.include_router(businesses_router)
 app.include_router(dashboard_router)
