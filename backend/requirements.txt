@@ -8,3 +8,5 @@ python-dotenv==1.0.1
 qrcode==8.0
 pillow==11.1.0
 google-generativeai==0.8.3
+
+
