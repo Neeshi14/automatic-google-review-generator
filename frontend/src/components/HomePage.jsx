@@ -1,8 +1,10 @@
-import { BarChart3, Download, LogOut, QrCode, ShieldCheck, Sparkles } from "lucide-react";
+import { BarChart3, Download, LogOut, QrCode, ShieldCheck, Sparkles, Star, Wand2 } from "lucide-react";
+import AnimatedHero from "./landing/AnimatedHero.jsx";
+import ScrollReveal from "./landing/ScrollReveal.jsx";
 
 export default function HomePage({ user, onLogout }) {
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen overflow-x-hidden">
       <nav className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-5 md:px-8">
         <a className="inline-flex items-center gap-2 text-base font-bold text-ink" href="/">
           <QrCode className="text-pine" size={22} /> ReviewQR Studio
@@ -23,49 +25,66 @@ export default function HomePage({ user, onLogout }) {
         )}
       </nav>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-8 px-4 pb-10 pt-6 md:grid-cols-[1fr_0.8fr] md:items-center md:px-8 md:pt-12">
-        <div className="grid gap-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-md bg-pine text-white">
-            <Sparkles />
-          </div>
-          <div>
-            <h1 className="max-w-2xl text-4xl font-bold leading-tight md:text-6xl">Google review QR codes with a live owner dashboard</h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">
-              Create one QR code for your business, let real customers generate review drafts, and track scans, generated sessions, and recent selected reviews from one dashboard.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <a className="focus-ring inline-flex min-h-12 items-center gap-2 rounded-md bg-pine px-5 font-semibold text-white" href={user ? (user.business_id ? "/dashboard" : "/setup") : "/auth"}>
-              <QrCode size={18} /> {user ? "Open workspace" : "Create your QR"}
-            </a>
-            <a className="focus-ring inline-flex min-h-12 items-center gap-2 rounded-md border border-slate-300 bg-white px-5 font-semibold" href="/auth">
-              <ShieldCheck size={18} /> Owner sign in
-            </a>
-          </div>
-        </div>
+      <AnimatedHero user={user} />
 
-        <div className="rounded-md bg-white p-5 shadow-soft">
-          <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-            <div className="mx-auto grid h-52 w-52 place-items-center rounded-md border-8 border-white bg-[linear-gradient(45deg,#172126_25%,transparent_25%),linear-gradient(-45deg,#172126_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#172126_75%),linear-gradient(-45deg,transparent_75%,#172126_75%)] bg-[length:26px_26px] bg-[position:0_0,0_13px,13px_-13px,-13px_0] shadow-sm">
-              <QrCode className="rounded-md bg-white p-3 text-pine" size={86} />
-            </div>
-            <div className="mt-5 grid gap-3">
-              <Feature icon={<Download size={18} />} title="Download QR anytime" />
-              <Feature icon={<BarChart3 size={18} />} title="Track scans and generated sessions" />
-              <Feature icon={<ShieldCheck size={18} />} title="One QR workspace per account" />
-            </div>
-          </div>
+      <ScrollReveal as="section" className="mx-auto w-full max-w-6xl px-4 pb-14 md:px-8">
+        <div className="grid gap-3 rounded-md border border-emerald-100 bg-white/80 p-4 shadow-soft sm:grid-cols-3">
+          <Metric value="3 steps" label="Scan, write, post" />
+          <Metric value="5 scenes" label="Built for local businesses" />
+          <Metric value="1 QR" label="A simple review workflow" />
+        </div>
+      </ScrollReveal>
+
+      <section id="how-it-works" className="mx-auto w-full max-w-6xl px-4 py-14 md:px-8">
+        <ScrollReveal className="mx-auto max-w-2xl text-center">
+          <p className="text-sm font-bold uppercase tracking-wide text-pine">How it works</p>
+          <h2 className="mt-2 text-3xl font-bold md:text-4xl">A clearer path from happy visit to posted review</h2>
+          <p className="mt-4 text-slate-700">The landing animation mirrors the real product flow without changing your existing QR, dashboard, or review-generation logic.</p>
+        </ScrollReveal>
+        <div className="how-line mt-10 grid gap-4 md:grid-cols-4">
+          <Step delay={80} icon={<QrCode size={20} />} title="Customer scans" text="A QR code opens the business review page." />
+          <Step delay={180} icon={<Wand2 size={20} />} title="Review draft appears" text="The customer picks a genuine experience and creates a draft." />
+          <Step delay={280} icon={<Star size={20} />} title="Five-star moment" text="Positive feedback is represented clearly and calmly." />
+          <Step delay={380} icon={<BarChart3 size={20} />} title="Owner tracks growth" text="The dashboard keeps scans and selected reviews organized." />
+        </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-6xl px-4 pb-16 md:px-8">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Feature delay={80} icon={<Download size={18} />} title="Download QR anytime" text="Keep your review QR available for counters, tables, cards, and packaging." />
+          <Feature delay={180} icon={<BarChart3 size={18} />} title="Track review activity" text="Monitor scans, generated sessions, and recent selected reviews from one workspace." />
+          <Feature delay={280} icon={<ShieldCheck size={18} />} title="Owner-controlled setup" text="Your existing sign-in, dashboard, and QR setup flow stay intact." />
         </div>
       </section>
     </main>
   );
 }
 
-function Feature({ icon, title }) {
+function Metric({ value, label }) {
   return (
-    <div className="flex items-center gap-3 rounded-md bg-white px-3 py-3 text-sm font-semibold text-ink">
-      <span className="text-pine">{icon}</span>
-      <span>{title}</span>
+    <div className="rounded-md bg-mist/70 p-4 text-center">
+      <p className="text-2xl font-bold text-ink">{value}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-600">{label}</p>
     </div>
+  );
+}
+
+function Step({ icon, title, text, delay }) {
+  return (
+    <ScrollReveal delay={delay} className="how-card rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+      <span className="feature-icon inline-flex h-10 w-10 items-center justify-center rounded-md bg-pine text-white">{icon}</span>
+      <h3 className="mt-4 text-lg font-bold">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+    </ScrollReveal>
+  );
+}
+
+function Feature({ icon, title, text, delay }) {
+  return (
+    <ScrollReveal delay={delay} className="feature-card rounded-md border border-slate-200 bg-white p-5 shadow-sm">
+      <span className="text-pine">{icon}</span>
+      <h3 className="mt-4 text-lg font-bold text-ink">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+    </ScrollReveal>
   );
 }
