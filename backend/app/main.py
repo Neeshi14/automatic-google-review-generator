@@ -32,15 +32,14 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_origins=[
-        "https://automatic-google-review-generator.vercel.app",
-        "http://localhost:3000",
-    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+#allow_origins=[
+#        "https://automatic-google-review-generator.vercel.app",
+#        "http://localhost:3000",
+#    ],
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.include_router(auth_router)
 app.include_router(businesses_router)
