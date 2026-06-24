@@ -90,7 +90,11 @@ async def generate_reviews(
     if not business:
         raise HTTPException(status_code=404, detail="Business not found.")
 
-    reviews = await generate_review_suggestions(business, payload.experience, payload.keywords)
+    try:
+        reviews = await generate_review_suggestions(business, payload.experience, payload.keywords)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
     review_session.selected_experience = payload.experience
     review_session.selected_keywords = payload.keywords
     review_session.generated_reviews = reviews
