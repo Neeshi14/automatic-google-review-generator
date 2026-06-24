@@ -1,8 +1,13 @@
 import { Copy, Download, ExternalLink, LogOut, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api } from "../api.js";
+import { api, downloadPngFromUrl } from "../api.js";
 import LoadingSpinner from "./LoadingSpinner.jsx";
 import Toast from "./Toast.jsx";
+
+function qrFilename(name) {
+  const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "qr-code";
+  return `${safeName}-qr.png`;
+}
 
 export default function DashboardPage({ businessId, user, onLogout }) {
   const [dashboard, setDashboard] = useState(null);
@@ -28,6 +33,15 @@ export default function DashboardPage({ businessId, user, onLogout }) {
     await navigator.clipboard.writeText(text);
     setToast("Copied to clipboard.");
     setTimeout(() => setToast(""), 2200);
+  }
+
+  async function downloadQr() {
+    try {
+      await downloadPngFromUrl(dashboard.qr_code_url, qrFilename(dashboard.business_name));
+    } catch (err) {
+      setToast(err.message);
+      setTimeout(() => setToast(""), 2600);
+    }
   }
 
   const reviewPageUrl = dashboard ? `${window.location.origin}/review/${dashboard.business_slug}` : "";
@@ -58,9 +72,9 @@ export default function DashboardPage({ businessId, user, onLogout }) {
                 <p className="mt-1 break-all text-sm text-slate-600">Review page: {reviewPageUrl}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <a className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white" href={dashboard.qr_code_url} download>
+                <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white" onClick={downloadQr}>
                   <Download size={17} /> Download QR
-                </a>
+                </button>
                 <button className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold" onClick={() => copy(reviewPageUrl)}>
                   <Copy size={17} /> Copy link
                 </button>
@@ -75,8 +89,8 @@ export default function DashboardPage({ businessId, user, onLogout }) {
               <Metric label="Top experience" value={dashboard.most_selected_experience || "No data"} />
             </div>
             <div>
-              <h2 className="text-xl font-bold">Recent selected reviews</h2>
-              <p className="mt-1 text-sm text-slate-600">Reviews appear here after a customer scans the QR, generates reviews, selects one, and opens Google.</p>
+              <h2 className="text-xl font-bold">Posted reviews</h2>
+              <p className="mt-1 text-sm text-slate-600">All selected reviews appear here after a customer opens Google from this review page.</p>
               <div className="mt-3 grid gap-3">
                 {dashboard.recent_selected_reviews.length === 0 && <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">No selected reviews yet.</p>}
                 {dashboard.recent_selected_reviews.map((review, index) => (

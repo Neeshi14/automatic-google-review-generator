@@ -42,6 +42,7 @@ class ReviewSession(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     business_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), ForeignKey("businesses.id"), nullable=False)
     session_token: Mapped[str] = mapped_column(String(80), unique=True, index=True, nullable=False)
+    client_session_id: Mapped[str | None] = mapped_column(String(80), unique=True, index=True)
     ip_address: Mapped[str | None] = mapped_column(String(64))
     user_agent: Mapped[str | None] = mapped_column(Text)
     selected_experience: Mapped[str | None] = mapped_column(String(40))

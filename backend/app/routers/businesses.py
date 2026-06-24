@@ -124,7 +124,6 @@ def get_dashboard(business_id: uuid.UUID, db: Session = Depends(get_db)) -> Dash
         select(ReviewSession.selected_review)
         .where(ReviewSession.business_id == business_id, ReviewSession.selected_review.is_not(None))
         .order_by(ReviewSession.updated_at.desc())
-        .limit(10)
     ).all()
 
     return DashboardResponse(

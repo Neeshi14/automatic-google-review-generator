@@ -2,6 +2,7 @@ import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -38,14 +39,38 @@ def create_review_session(
     if not business:
         raise HTTPException(status_code=404, detail="Business not found.")
 
+    if payload.client_session_id:
+        existing_session = db.scalar(
+            select(ReviewSession).where(
+                ReviewSession.business_id == business.id,
+                ReviewSession.client_session_id == payload.client_session_id,
+            )
+        )
+        if existing_session:
+            return ReviewSessionResponse(session_id=existing_session.id, session_token=existing_session.session_token)
+
     session = ReviewSession(
         business_id=business.id,
         session_token=secrets.token_urlsafe(32),
+        client_session_id=payload.client_session_id,
         ip_address=request.client.host if request.client else "",
         user_agent=request.headers.get("user-agent", ""),
     )
     db.add(session)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        if payload.client_session_id:
+            existing_session = db.scalar(
+                select(ReviewSession).where(
+                    ReviewSession.business_id == business.id,
+                    ReviewSession.client_session_id == payload.client_session_id,
+                )
+            )
+            if existing_session:
+                return ReviewSessionResponse(session_id=existing_session.id, session_token=existing_session.session_token)
+        raise
     db.refresh(session)
     return ReviewSessionResponse(session_id=session.id, session_token=session.session_token)
 

@@ -81,10 +81,10 @@ export const api = {
       body: JSON.stringify(payload),
     }),
   getBusiness: (slug) => request(`/api/businesses/${encodeURIComponent(slug)}`),
-  createSession: (businessId) =>
+  createSession: (businessId, clientSessionId) =>
     request("/api/review-sessions", {
       method: "POST",
-      body: JSON.stringify({ business_id: businessId }),
+      body: JSON.stringify({ business_id: businessId, client_session_id: clientSessionId }),
     }),
   generateReviews: (sessionToken, payload) =>
     request(`/api/review-sessions/${encodeURIComponent(sessionToken)}/generate-reviews`, {
@@ -98,3 +98,20 @@ export const api = {
     }),
   getDashboard: (businessId) => request(`/api/dashboard/${encodeURIComponent(businessId)}`),
 };
+
+export async function downloadPngFromUrl(url, filename) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Could not download the QR code. Please try again.");
+  }
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename.endsWith(".png") ? filename : `${filename}.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}

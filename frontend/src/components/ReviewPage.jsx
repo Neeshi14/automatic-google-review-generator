@@ -4,6 +4,21 @@ import LoadingSpinner from "./LoadingSpinner.jsx";
 import ReviewGenerator from "./ReviewGenerator.jsx";
 import Toast from "./Toast.jsx";
 
+function createClientSessionId(slug) {
+  const key = `review_qr_client_session_${slug}`;
+  const randomId = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  try {
+    const existing = sessionStorage.getItem(key);
+    if (existing) return existing;
+    sessionStorage.setItem(key, randomId);
+  } catch (_err) {
+    return randomId;
+  }
+
+  return randomId;
+}
+
 export default function ReviewPage({ slug }) {
   const [business, setBusiness] = useState(null);
   const [sessionToken, setSessionToken] = useState("");
@@ -24,7 +39,7 @@ export default function ReviewPage({ slug }) {
       try {
         const foundBusiness = await api.getBusiness(slug);
         if (cancelled) return;
-        const session = await api.createSession(foundBusiness.business_id);
+        const session = await api.createSession(foundBusiness.business_id, createClientSessionId(slug));
         if (cancelled) return;
         setBusiness(foundBusiness);
         setSessionToken(session.session_token);

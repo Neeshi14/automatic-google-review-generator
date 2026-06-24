@@ -91,6 +91,15 @@ class BusinessPublic(BaseModel):
 
 class ReviewSessionCreate(BaseModel):
     business_id: uuid.UUID
+    client_session_id: str | None = Field(default=None, max_length=80)
+
+    @field_validator("client_session_id")
+    @classmethod
+    def clean_client_session_id(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        value = value.strip()
+        return value or None
 
 
 class ReviewSessionResponse(BaseModel):

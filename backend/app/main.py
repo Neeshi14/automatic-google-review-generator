@@ -55,19 +55,28 @@ def create_tables() -> None:
 
 def ensure_existing_schema() -> None:
     inspector = inspect(engine)
-    if "businesses" not in inspector.get_table_names():
+    table_names = inspector.get_table_names()
+    if "businesses" not in table_names:
         return
 
     columns = {column["name"] for column in inspector.get_columns("businesses")}
-    if "owner_user_id" in columns:
-        return
+    session_columns = {column["name"] for column in inspector.get_columns("review_sessions")} if "review_sessions" in table_names else set()
 
-    with engine.begin() as connection:
-        if engine.dialect.name == "postgresql":
-            connection.execute(text("ALTER TABLE businesses ADD COLUMN owner_user_id UUID REFERENCES users(id)"))
-            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_businesses_owner_user_id ON businesses (owner_user_id)"))
-        else:
-            connection.execute(text("ALTER TABLE businesses ADD COLUMN owner_user_id CHAR(32)"))
+    if "owner_user_id" not in columns:
+        with engine.begin() as connection:
+            if engine.dialect.name == "postgresql":
+                connection.execute(text("ALTER TABLE businesses ADD COLUMN owner_user_id UUID REFERENCES users(id)"))
+                connection.execute(text("CREATE INDEX IF NOT EXISTS ix_businesses_owner_user_id ON businesses (owner_user_id)"))
+            else:
+                connection.execute(text("ALTER TABLE businesses ADD COLUMN owner_user_id CHAR(32)"))
+
+    if "client_session_id" not in session_columns and "review_sessions" in table_names:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE review_sessions ADD COLUMN client_session_id VARCHAR(80)"))
+            if engine.dialect.name == "postgresql":
+                connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_review_sessions_client_session_id ON review_sessions (client_session_id)"))
+            else:
+                connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS ix_review_sessions_client_session_id ON review_sessions (client_session_id)"))
 
 
 @app.exception_handler(OperationalError)

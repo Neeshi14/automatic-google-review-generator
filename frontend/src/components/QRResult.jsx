@@ -1,7 +1,22 @@
 import { Copy, Download, ExternalLink } from "lucide-react";
+import { downloadPngFromUrl } from "../api.js";
+
+function qrFilename(name) {
+  const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "qr-code";
+  return `${safeName}-qr.png`;
+}
 
 export default function QRResult({ result, onCopy }) {
   if (!result) return null;
+
+  async function downloadQr() {
+    try {
+      await downloadPngFromUrl(result.qr_code_url, qrFilename(result.business_name));
+    } catch (_err) {
+      window.open(result.qr_code_url, "_blank", "noopener,noreferrer");
+    }
+  }
+
   return (
     <section className="mt-8 rounded-md border border-emerald-200 bg-white p-5 shadow-soft">
       <div className="grid gap-5 md:grid-cols-[180px_1fr] md:items-center">
@@ -13,9 +28,9 @@ export default function QRResult({ result, onCopy }) {
             <p className="mt-2 break-all text-sm text-slate-600">{result.review_page_url}</p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <a className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white" href={result.qr_code_url} download>
+            <button className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-md bg-ink px-4 py-2 text-sm font-semibold text-white" onClick={downloadQr}>
               <Download size={17} /> Download PNG
-            </a>
+            </button>
             <button className="focus-ring inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold" onClick={() => onCopy(result.review_page_url)}>
               <Copy size={17} /> Copy link
             </button>
