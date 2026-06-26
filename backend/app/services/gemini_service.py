@@ -9,23 +9,11 @@ from app.models import Business
 
 
 SYSTEM_INSTRUCTION = """
-You write realistic first-person Google review drafts for real customers.
-
-Quality requirements:
-- Sound like a genuine customer typing a normal Google review, not an advertisement, slogan, or AI template.
-- Use specific but safe details from the provided business category and selected keywords.
-- Do not invent names, staff names, exact prices, dates, discounts, locations, timelines, guarantees, or outcomes that were not provided.
-- Avoid childish, silly, exaggerated, or empty phrases such as "very good", "nice place", "awesome service", "best ever", or "I had a good experience" as the main content.
-- Avoid overly polished phrases such as "positive impression", "worth recommending", "seamless experience", "exceeded expectations", "from start to finish", or "highly professional" unless they genuinely fit.
-- Each review must have a slightly different angle, sentence structure, and word choice.
-- Write in natural everyday English with 1 sentence, or 2 short sentences when it sounds better.
-- Keep reviews medium length for this app: 15 to 20 words. Do not write long paragraphs.
-- Keep the review credible for Google: no pressure, no fake claims, no medical/legal/financial promises, no mention of AI or generated text.
-- The customer's selected experience controls intensity:
-  - Excellent: warm, confident, appreciative, but not overhyped.
-  - Good: positive and balanced, with room for normal human wording.
-  - Average: fair, calm, and constructive, not harsh or fake-positive.
-- Return only valid JSON: an array of exactly 10 strings.
+Write realistic first-person Google review drafts for real customers.
+Use only the supplied category, tone, experience, and keywords. Do not invent staff names, prices, dates, offers, locations, promises, or outcomes.
+Each review must sound natural, specific, and credible, not promotional, fake, childish, or AI-written.
+Match intensity to experience: Excellent = warm/confident, Good = positive/balanced, Average = calm/constructive.
+Return only valid JSON: exactly 10 strings, each 15-20 words, with varied wording and openings.
 """.strip()
 
 
@@ -56,30 +44,15 @@ async def generate_review_suggestions(business: Business, experience: str, keywo
         raise RuntimeError("AI review generation is not configured. Add GEMINI_API_KEY to generate fresh reviews.")
 
     prompt = f"""
-Create 10 natural Google review draft options for one real customer.
+Create 10 fresh Google review drafts.
+Experience: {experience}
+Category: {category}
+Tone: {tone}
+Keywords: {', '.join(keywords) if keywords else 'none'}
+Seed: {nonce}
 
-Inputs:
-- Selected experience: {experience}
-- Business category: {category}
-- Preferred tone: {tone}
-- Customer-selected keywords: {', '.join(keywords) if keywords else 'none'}
-- Random session seed: {nonce}
-
-Writing guidance:
-- Generate brand-new wording for this request. Do not reuse earlier fallback/template review sentences.
-- Make every review sound like a real person wrote it on Google after visiting the business.
-- Use simple human wording, including small natural imperfections in phrasing, but keep grammar clean.
-- Avoid sounding too polished, promotional, formal, poetic, or template-like.
-- Use the keywords as realistic points of focus, not as a comma-separated list.
-- If no keywords are provided, infer only broad category-safe details.
-- Avoid repeating the same opening across reviews.
-- Make the reviews sound like different real customers could have written them, not one writer changing a few words.
-- Keep every review medium length for this app: 15 to 20 words.
-- Use 1 natural sentence, or 2 very short sentences only when needed.
-- Do not create short one-liners, long paragraphs, bullet points, or overly detailed stories.
-- Do not make every review perfect or dramatic. Keep them believable and grounded.
-
-Output only a valid JSON array of exactly 10 strings.
+Use keywords naturally, not as a list. If keywords are none, use only category-safe details.
+Output JSON array only.
 """.strip()
 
     try:
@@ -88,9 +61,11 @@ Output only a valid JSON array of exactly 10 strings.
             "gemini-2.0-flash",
             system_instruction=SYSTEM_INSTRUCTION,
             generation_config={
-                "temperature": 0.85,
+                "temperature": 0.75,
                 "top_p": 0.92,
                 "top_k": 40,
+                "max_output_tokens": 700,
+                "response_mime_type": "application/json",
             },
         )
         response = await model.generate_content_async(prompt)
