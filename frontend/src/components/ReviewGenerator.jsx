@@ -37,24 +37,52 @@ export default function ReviewGenerator({ business, sessionToken, onToast }) {
 
   async function useReview(review) {
     setSelectedReview(review);
-    await navigator.clipboard.writeText(review);
+    await copyToClipboard(review);
     onToast("Review copied. You can edit it before posting.");
   }
 
   async function copyReview() {
-    await navigator.clipboard.writeText(selectedReview);
+    await copyToClipboard(selectedReview.trim());
     onToast("Review copied to clipboard.");
   }
 
+  async function copyToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+
   async function postOnGoogle() {
+    const reviewToPost = selectedReview.trim();
+    const googleTab = window.open("about:blank", "_blank");
+    if (googleTab) {
+      googleTab.opener = null;
+    }
+
     setSaving(true);
     setError("");
     try {
-      await api.saveSelectedReview(sessionToken, selectedReview);
-      await navigator.clipboard.writeText(selectedReview);
-      onToast("Your review has been copied. Paste it on Google and submit it.");
-      window.open(business.google_review_url, "_blank", "noopener,noreferrer");
+      await copyToClipboard(reviewToPost);
+      await api.saveSelectedReview(sessionToken, reviewToPost);
+      onToast("Your review is copied. Paste it on Google, then click Post.");
+      if (googleTab) {
+        googleTab.location.href = business.google_review_url;
+      } else {
+        window.location.href = business.google_review_url;
+      }
     } catch (err) {
+      googleTab?.close();
       setError(err.message);
     } finally {
       setSaving(false);
