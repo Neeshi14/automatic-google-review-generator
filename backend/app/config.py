@@ -7,6 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./review_qr.db"
     gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.0-flash"
     frontend_url: AnyHttpUrl = "http://localhost:5173"
     backend_url: AnyHttpUrl = "http://localhost:8000"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
